@@ -26,7 +26,12 @@ public:
     texShader->shadeRow(x,y,count,trow);
 
     for(int i = 0; i < count; i++) {
-      row[i] = crow[i]*trow[i];
+      int a = GPixel_GetA(crow[i])*GPixel_GetA(trow[i]) / 255;
+      int r = GPixel_GetR(crow[i])*GPixel_GetR(trow[i]) / 255;
+      int g = GPixel_GetG(crow[i])*GPixel_GetG(trow[i]) / 255;
+      int b = GPixel_GetB(crow[i])*GPixel_GetB(trow[i]) / 255;
+
+      row[i] = GPixel_PackARGB(a, r, g, b);
     }
   }
 
