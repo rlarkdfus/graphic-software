@@ -367,6 +367,71 @@ void MyCanvas::drawMesh(const GPoint verts[], const GColor colors[], const GPoin
 
 void MyCanvas::drawQuad(const GPoint verts[4], const GColor colors[4], const GPoint texs[4],
     int level, const GPaint& paint) {
+  if(!colors) return;
+
+  int num = (2+level)*(2+level);
+  int count = (1+level)*(1+level);
+  GPoint points[num];
+  GColor ncolors[num];
+  int indices[6*count];
+
+  float stp = 1.0f / (level+1.0f);
+
+  GPoint v1step = (verts[3] - verts[0])*stp;
+  GPoint v2step = (verts[2] - verts[1])*stp;
+
+  GPoint a = verts[0];
+  GPoint b = verts[1];
+
+  GColor acolor = colors[0];
+  GColor bcolor = colors[1];
+
+  GColor vc1step = (colors[3] - colors[0])*stp;
+  GColor vc2step = (colors[2] - colors[1])*stp;
+
+  int idx = 0;
+  for(int i = 0; i < level+2; i++) {
+    GPoint ustep = (b-a)*stp;
+    GPoint pt = a;
+
+    GColor ucstep = (bcolor-acolor)*stp;
+    GColor c = acolor;
+    for(int j = 0; j < level+2; j++) {
+      points[idx] = pt;
+      pt += ustep;
+
+      ncolors[idx] = c;
+      c += ucstep;
+
+      idx++;
+    }
+    a += v1step;
+    b += v2step;
+
+    acolor += vc1step;
+    bcolor += vc2step;
+  }
+
+  idx = 0;
+  for(int i = 0; i < level+1; i++) {
+    for(int j = 0; j < level+1; j++) {
+      int lt = (level+2)*i + j;
+      int lb = (level+2)*(i+1) + j;
+      
+      indices[idx+0] = lt;
+      indices[idx+1] = lt+1;
+      indices[idx+2] = lb;
+
+      indices[idx+3] = lt+1;
+      indices[idx+4] = lb;
+      indices[idx+5] = lb+1;
+
+      idx += 6;
+    }
+  }
+
+  drawMesh(points, ncolors, nullptr, 2*count, indices, paint);
+
 }
 
 
