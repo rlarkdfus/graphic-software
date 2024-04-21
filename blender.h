@@ -1,3 +1,5 @@
+#include<iostream>
+using namespace std;
 static inline GPixel premul(const GColor& color) {
   int a = GRoundToInt(255.0f*color.a);
   int r = GRoundToInt(a*color.r);

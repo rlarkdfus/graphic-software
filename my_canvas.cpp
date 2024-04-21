@@ -324,8 +324,9 @@ GShader* initTexShader(GPoint U, GPoint V, int n, GPoint points[], const GPoint 
   GMatrix Tinv, T = GMatrix(
       TU.x, TV.x, txts[0].x,
       TU.y, TV.y, txts[0].y);
+
   optional<GMatrix> Tt = T.invert();
-  if(Tt.has_value()) Tinv = *Tt;
+  if(Tt.has_value()) Tinv = Tt.value();
   else return nullptr;
 
   return new TexShader(P*Tinv, paint.getShader());
@@ -344,7 +345,6 @@ void MyCanvas::drawMesh(const GPoint verts[], const GColor colors[], const GPoin
 
     GPoint U = points[1] - points[0];
     GPoint V = points[2] - points[0];
-
 
     if(texs == nullptr) {
       shader = initColorShader(U, V, n, points, colors, indices);
@@ -365,52 +365,82 @@ void MyCanvas::drawMesh(const GPoint verts[], const GColor colors[], const GPoin
   }
 }
 
-void MyCanvas::drawQuad(const GPoint verts[4], const GColor colors[4], const GPoint texs[4],
-    int level, const GPaint& paint) {
-  if(!colors) return;
+void drawQuadTex(GPoint ntexs[], const GPoint texs[4], int level) {
+  float step = 1.0f / (level+1.0f);
+  GPoint at = texs[0];
+  GPoint bt = texs[1];
+  GPoint tv1step = (texs[3] - texs[0])*step;
+  GPoint tv2step = (texs[2] - texs[1])*step;
+  
+  int idx = 0;
+  for(int i = 0; i < level + 2; i++) {
+    GPoint utstep = (bt - at)*step;
+    GPoint t = at;
+    for(int j = 0; j < level + 2; j++) {
+      ntexs[idx] = t;
+      t += utstep;
 
-  int num = (2+level)*(2+level);
-  int count = (1+level)*(1+level);
-  GPoint points[num];
-  GColor ncolors[num];
-  int indices[6*count];
+      idx++;
+    }
+    at += tv1step;
+    bt += tv2step;
+  }
+}
 
-  float stp = 1.0f / (level+1.0f);
 
-  GPoint v1step = (verts[3] - verts[0])*stp;
-  GPoint v2step = (verts[2] - verts[1])*stp;
-
-  GPoint a = verts[0];
-  GPoint b = verts[1];
-
+void drawQuadColor(GColor ncolors[], const GColor colors[4], int level) {
+  float step = 1.0f / (level+1.0f);
   GColor acolor = colors[0];
   GColor bcolor = colors[1];
-
-  GColor vc1step = (colors[3] - colors[0])*stp;
-  GColor vc2step = (colors[2] - colors[1])*stp;
+  GColor vc1step = (colors[3] - colors[0])*step;
+  GColor vc2step = (colors[2] - colors[1])*step;
 
   int idx = 0;
-  for(int i = 0; i < level+2; i++) {
-    GPoint ustep = (b-a)*stp;
-    GPoint pt = a;
-
-    GColor ucstep = (bcolor-acolor)*stp;
+  for(int i = 0; i < level + 2; i++) {
+    GColor ucstep = (bcolor-acolor)*step;
     GColor c = acolor;
-    for(int j = 0; j < level+2; j++) {
-      points[idx] = pt;
-      pt += ustep;
-
+    for(int j = 0; j < level + 2; j++) {
       ncolors[idx] = c;
       c += ucstep;
 
       idx++;
     }
-    a += v1step;
-    b += v2step;
-
     acolor += vc1step;
     bcolor += vc2step;
   }
+}
+
+
+void MyCanvas::drawQuad(const GPoint verts[4], const GColor colors[4], const GPoint texs[4],
+    int level, const GPaint& paint) {
+  int num = (2+level)*(2+level);
+  int count = 2*(1+level)*(1+level);
+  GPoint points[num], ntexs[num];
+  GColor ncolors[num];
+  int indices[3*count];
+
+  float step = 1.0f / (level+1.0f);
+
+  GPoint a = verts[0];
+  GPoint b = verts[1];
+  GPoint v1step = (verts[3] - verts[0])*step;
+  GPoint v2step = (verts[2] - verts[1])*step;
+
+  int idx = 0;
+  for(int i = 0; i < level+2; i++) {
+    GPoint ustep = (b-a)*step;
+    GPoint pt = a;
+    for(int j = 0; j < level+2; j++) {
+      points[idx] = pt;
+      pt += ustep;
+      idx++;
+    }
+    a += v1step;
+    b += v2step;
+  }
+
+  if(colors) drawQuadColor(ncolors, colors, level);
+  if (texs) drawQuadTex(ntexs, texs, level);
 
   idx = 0;
   for(int i = 0; i < level+1; i++) {
@@ -430,8 +460,13 @@ void MyCanvas::drawQuad(const GPoint verts[4], const GColor colors[4], const GPo
     }
   }
 
-  drawMesh(points, ncolors, nullptr, 2*count, indices, paint);
+  for(int i = 0; i < level+2; i++) {
+    for(int j = 0; j < level+2; j++) {
+     // cout << ntexs[(level+2)*i + j].x << ", " << ntexs[(level+2)*i + j].y << endl;
+    }
+  }
 
+  drawMesh(points, colors?ncolors:nullptr, texs?ntexs:nullptr, count, indices, paint);
 }
 
 
