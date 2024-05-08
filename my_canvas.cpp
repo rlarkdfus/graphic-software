@@ -2,12 +2,9 @@
  *  Copyright 2024 Gordon Kim!
  */
 
-#include "include/GMath.h"
-#include "include/GPixel.h"
 #include "my_canvas.h"
-#include "blender.h"
-#include "bitmap_shader.h"
 #include "edge.h"
+
 #include <algorithm>
 #include <iostream>
 

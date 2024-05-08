@@ -12,7 +12,9 @@
 #include "include/GPaint.h"
 #include "include/GMatrix.h"
 #include "include/GPath.h"
+#include "include/GMath.h"
 
+#include "blender.h"
 #include "bitmap_shader.h"
 #include "gradient_shader.h"
 #include "tricolor_shader.h"
